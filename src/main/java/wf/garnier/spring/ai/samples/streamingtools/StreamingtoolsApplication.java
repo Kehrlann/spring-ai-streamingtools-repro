@@ -45,18 +45,39 @@ public class StreamingtoolsApplication {
     @Bean
     CommandLineRunner clr(ChatModel chatModel) {
         return args -> {
-            var response = ChatClient.create(chatModel).prompt("What's the weather like in Paris?")
-                    .tools(new WeatherTool())
-                    .stream()
-                    .chatResponse()
-                    .flatMapIterable(ChatResponse::getResults)
-                    .map(Generation::getOutput)
-                    .mapNotNull(AbstractMessage::getText)
-                    .collect(Collectors.joining())
-                    .block();
+            var question = "What's the weather like in Paris?";
+            System.out.printf("\n\n🤔 Asking the LLM: \"%s\"\n\n", question);
+            System.out.println("💭 ... dreaming of electric sheep ...\n");
 
-            System.out.println("\n\n🤖 The LLM says ...\n");
+            var response = getBlockingResponse(chatModel, question);
+
+            System.out.println("🤖 The LLM says ...\n");
             System.out.println(response);
         };
+    }
+
+    private static String getBlockingResponse(ChatModel chatModel, String question) {
+        return ChatClient.create(chatModel).prompt(question)
+                .tools(new WeatherTool())
+                .stream()
+                .chatResponse()
+                .flatMapIterable(ChatResponse::getResults)
+                .map(Generation::getOutput)
+                .mapNotNull(AbstractMessage::getText)
+                .collect(Collectors.joining())
+                .block();
+    }
+
+    // If you prefer, you can stream the response to STDOUT
+    private static void streamResponseToStdout(ChatModel chatModel, String question) {
+        ChatClient.create(chatModel).prompt(question)
+                .tools(new WeatherTool())
+                .stream()
+                .chatResponse()
+                .flatMapIterable(ChatResponse::getResults)
+                .map(Generation::getOutput)
+                .mapNotNull(AbstractMessage::getText)
+                .doOnNext(System.out::print)
+                .blockLast();
     }
 }
